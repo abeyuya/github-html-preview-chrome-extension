@@ -31,12 +31,11 @@
 }
 
 #ghp-preview-overlay {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
-  height: 100%;
+  /* Tall viewport-based region; the preview scrolls internally for long pages. */
+  height: calc(100vh - 120px);
   min-height: 480px;
   border: 0;
   background: #fff;
-  z-index: 5;
 }
