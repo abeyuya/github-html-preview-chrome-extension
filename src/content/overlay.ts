@@ -3,11 +3,13 @@ const SANDBOX_URL = chrome.runtime.getURL("src/sandbox/index.html");
 const OVERLAY_ID = "ghp-preview-overlay";
 
 let overlay: HTMLIFrameElement | null = null;
+let hiddenEl: HTMLElement | null = null;
+let prevDisplay = "";
 let pendingHtml: string | null = null;
 let readyListener: ((event: MessageEvent) => void) | null = null;
 
-/** Mount the sandbox iframe over the file content area and render the HTML. */
-export function showPreview(anchor: HTMLElement, html: string): void {
+/** Replace the code content area with the sandbox iframe and render the HTML. */
+export function showPreview(codeEl: HTMLElement, html: string): void {
   hidePreview();
   pendingHtml = html;
 
@@ -33,7 +35,12 @@ export function showPreview(anchor: HTMLElement, html: string): void {
   };
   window.addEventListener("message", readyListener);
 
-  anchor.appendChild(overlay);
+  // Hide the code lines and drop the preview into the same spot, so the toolbar
+  // and commit header stay visible while the rendered output replaces the code.
+  hiddenEl = codeEl;
+  prevDisplay = codeEl.style.display;
+  codeEl.style.display = "none";
+  codeEl.parentElement?.insertBefore(overlay, codeEl);
 }
 
 export function hidePreview(): void {
@@ -44,6 +51,11 @@ export function hidePreview(): void {
   if (overlay) {
     overlay.remove();
     overlay = null;
+  }
+  if (hiddenEl) {
+    hiddenEl.style.display = prevDisplay;
+    hiddenEl = null;
+    prevDisplay = "";
   }
   pendingHtml = null;
 }

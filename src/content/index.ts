@@ -14,11 +14,10 @@ const TOOLBAR_SELECTORS = [
 ];
 
 const CONTENT_SELECTORS = [
-  '[data-testid="blob-viewer-file-content"]',
-  ".react-code-view-bottom-padding",
-  ".react-code-view",
-  ".Box.mt-3 .blob-wrapper",
+  ".react-code-file-contents",
+  '[data-hpc="true"]',
   ".blob-wrapper",
+  "table.highlight",
 ];
 
 let toggleButton: HTMLButtonElement | null = null;
@@ -61,7 +60,6 @@ function toggle(): void {
   if (!source || !location || !container) return;
 
   const html = resolveHtml(source, location);
-  container.style.position = "relative";
   showPreview(container, html);
   setButtonState(toggleButton, true);
 }
