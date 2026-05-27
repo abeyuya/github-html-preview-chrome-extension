@@ -33,7 +33,8 @@
 #ghp-preview-overlay {
   display: block;
   width: 100%;
-  /* Tall viewport-based region; the preview scrolls internally for long pages. */
+  /* Fallback height until the sandbox reports the rendered content height,
+     after which the iframe grows to fit and the page scrolls normally. */
   height: calc(100vh - 120px);
   min-height: 480px;
   border: 0;
