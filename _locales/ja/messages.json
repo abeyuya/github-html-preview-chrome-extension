@@ -1,0 +1,17 @@
+{
+  "extName": {
+    "message": "GitHub HTML Preview (Local)"
+  },
+  "extDescription": {
+    "message": "API トークンや GitHub Pages なしで、GitHub 上の HTML ファイルを直接プレビューします。ブラウザに既に表示されているソースをそのまま描画します。"
+  },
+  "previewButton": {
+    "message": "プレビュー"
+  },
+  "codeButton": {
+    "message": "コード"
+  },
+  "previewTitle": {
+    "message": "HTML プレビュー表示を切り替える"
+  }
+}

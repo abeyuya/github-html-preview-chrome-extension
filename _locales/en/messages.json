@@ -1,0 +1,17 @@
+{
+  "extName": {
+    "message": "GitHub HTML Preview (Local)"
+  },
+  "extDescription": {
+    "message": "Preview HTML files directly on GitHub without API tokens or GitHub Pages. Renders the source already shown in your browser."
+  },
+  "previewButton": {
+    "message": "Preview"
+  },
+  "codeButton": {
+    "message": "Code"
+  },
+  "previewTitle": {
+    "message": "Toggle rendered HTML preview"
+  }
+}
