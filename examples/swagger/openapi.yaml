@@ -1,0 +1,110 @@
+openapi: 3.0.3
+info:
+  title: Sample Pet Store API
+  description: |
+    拡張機能の Swagger UI プレビュー動作確認用のサンプル OpenAPI 定義です。
+    `examples/swagger/index.html` から相対パスで読み込まれます。
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/v1
+    description: サンプルサーバー
+tags:
+  - name: pets
+    description: ペットに関する操作
+paths:
+  /pets:
+    get:
+      tags:
+        - pets
+      summary: ペット一覧を取得
+      operationId: listPets
+      parameters:
+        - name: limit
+          in: query
+          description: 返却する最大件数
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: ペットの一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pet"
+    post:
+      tags:
+        - pets
+      summary: ペットを新規作成
+      operationId: createPet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewPet"
+      responses:
+        "201":
+          description: 作成されたペット
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+  /pets/{petId}:
+    get:
+      tags:
+        - pets
+      summary: 指定した ID のペットを取得
+      operationId: getPetById
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: ペットの ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 該当するペット
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "404":
+          description: ペットが見つからない
+components:
+  schemas:
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: ポチ
+        tag:
+          type: string
+          example: dog
+    NewPet:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: タマ
+        tag:
+          type: string
+          example: cat

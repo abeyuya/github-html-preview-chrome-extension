@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Relative Assets Sample</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <h1>相対パスのアセット解決サンプル</h1>
+    <p>
+      この HTML は <code>./style.css</code> と <code>./logo.png</code> を
+      <strong>相対パス</strong>で参照しています。拡張機能はこれらを
+      <code>raw.githubusercontent.com</code> 配下の URL に自動解決します。
+    </p>
+
+    <img class="logo" src="./logo.png" alt="サンプルロゴ" />
+
+    <div class="note">
+      <p>背景グラデーションと枠線が適用されていれば <code>style.css</code> が、
+      上にロゴ画像が表示されていれば <code>logo.png</code> が、いずれも相対パスから
+      正しく解決・読み込みできています。</p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Basic Preview Sample</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        line-height: 1.6;
+        color: #1f2328;
+        background: #ffffff;
+      }
+      h1 {
+        margin-top: 0;
+      }
+      .card {
+        border: 1px solid #d0d7de;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0;
+        background: #f6f8fa;
+      }
+      button {
+        font: inherit;
+        padding: 0.5rem 1rem;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        background: #1f883d;
+        color: #fff;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #1a7f37;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>基本サンプル (インライン CSS / JS)</h1>
+    <p>
+      このページは外部リソースに一切依存しません。拡張機能の <strong>Preview</strong>
+      ボタンで、インラインの CSS が適用され JS が実行されることを確認できます。
+    </p>
+
+    <div class="card">
+      <p>下のボタンを押すと行が追加され、プレビューの高さが自動で伸びる挙動
+      (高さ追従) を確認できます。</p>
+      <button id="add">行を追加する</button>
+      <ul id="list"></ul>
+    </div>
+
+    <script>
+      const list = document.getElementById("list");
+      let count = 0;
+      document.getElementById("add").addEventListener("click", () => {
+        count += 1;
+        const li = document.createElement("li");
+        li.textContent = `追加された行 #${count} — ${new Date().toLocaleTimeString()}`;
+        list.appendChild(li);
+      });
+    </script>
+  </body>
+</html>
