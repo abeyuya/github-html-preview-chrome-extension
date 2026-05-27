@@ -13,7 +13,7 @@ GitHub HTML Preview 拡張機能の挙動を、このリポジトリ上でその
 | サンプル | 確認できること |
 | --- | --- |
 | [basic.html](./basic.html) | インライン CSS/JS のみの基本描画。ボタン操作で行を増やすと、プレビューの高さが自動で追従します。 |
-| [relative-assets/index.html](./relative-assets/index.html) | 相対パスの CSS (`./style.css`) と画像 (`./logo.png`) が `raw.githubusercontent.com` の URL に自動解決され、適用・表示されます。 |
+| [relative-assets/index.html](./relative-assets/index.html) | 相対パスの画像 (`./logo.png`) が `raw.githubusercontent.com` の URL に自動解決され、表示されます。（`<link>`/`<script src>` の CSS・JS は raw の `text/plain` + `nosniff` によりブラウザが適用を拒否するため、相対解決の確認には画像を用いています。） |
 | [swagger/index.html](./swagger/index.html) | Swagger UI を CDN から読み込み、同一リポジトリの [`openapi.yaml`](./swagger/openapi.yaml) を相対パスで `fetch` して API ドキュメントを描画します。spec の取得は content script 経由のプロキシで行われるため、private リポジトリでも動作します。 |
 
 > リンクはこの README と同じブランチの blob ページに解決されるので、そのまま Preview を試せます。
