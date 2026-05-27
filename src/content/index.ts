@@ -62,7 +62,7 @@ function toggle(): void {
 
   const html = resolveHtml(source, location);
   container.style.position = "relative";
-  showPreview(container, html);
+  showPreview(container, html, location);
   setButtonState(toggleButton, true);
 }
 

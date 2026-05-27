@@ -31,9 +31,37 @@ function render(html: string): void {
   document.body.appendChild(frame);
 }
 
+function isPreviewMessage(data: unknown): data is { type: string } {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    (data as { source?: unknown }).source === "github-html-preview" &&
+    typeof (data as { type?: unknown }).type === "string"
+  );
+}
+
 window.addEventListener("message", (event: MessageEvent) => {
-  if (!isRenderMessage(event.data)) return;
-  render(event.data.html);
+  if (isRenderMessage(event.data)) {
+    render(event.data.html);
+    return;
+  }
+  if (!isPreviewMessage(event.data)) return;
+
+  // Relay the resource proxy protocol between the previewed srcdoc iframe and
+  // the content script: requests bubble up to the parent, responses go back
+  // down to the frame.
+  if (
+    event.data.type === "resource-request" &&
+    frame &&
+    event.source === frame.contentWindow
+  ) {
+    window.parent.postMessage(event.data, "*");
+  } else if (
+    event.data.type === "resource-response" &&
+    event.source === window.parent
+  ) {
+    frame?.contentWindow?.postMessage(event.data, "*");
+  }
 });
 
 // Tell the content script we are ready to receive the HTML.
