@@ -1,0 +1,17 @@
+{
+  "name": "github-html-preview-chrome-extension",
+  "version": "1.0.0",
+  "description": "Preview HTML files directly on GitHub without API tokens or GitHub Pages.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2"
+  }
+}
