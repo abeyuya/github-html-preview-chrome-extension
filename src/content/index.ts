@@ -1,5 +1,5 @@
 import { extractSource } from "./extractSource";
-import { parseBlobLocation, resolveHtml } from "./resolvePaths";
+import { parseBlobLocation, rawBaseUrl } from "./resolvePaths";
 import { showPreview, hidePreview, isPreviewVisible } from "./overlay";
 import { createToggleButton, setButtonState, BUTTON_ID } from "./button";
 
@@ -60,9 +60,8 @@ function toggle(): void {
   const container = findContentContainer();
   if (!source || !location || !container) return;
 
-  const html = resolveHtml(source, location);
   container.style.position = "relative";
-  showPreview(container, html);
+  showPreview(container, source, rawBaseUrl(location));
   setButtonState(toggleButton, true);
 }
 

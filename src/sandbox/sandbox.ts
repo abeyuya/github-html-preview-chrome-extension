@@ -1,7 +1,10 @@
+import { resolveHtml } from "./resolveHtml";
+
 interface RenderMessage {
   source: "github-html-preview";
   type: "render";
   html: string;
+  base: string;
 }
 
 function isRenderMessage(data: unknown): data is RenderMessage {
@@ -10,7 +13,8 @@ function isRenderMessage(data: unknown): data is RenderMessage {
     data !== null &&
     (data as RenderMessage).source === "github-html-preview" &&
     (data as RenderMessage).type === "render" &&
-    typeof (data as RenderMessage).html === "string"
+    typeof (data as RenderMessage).html === "string" &&
+    typeof (data as RenderMessage).base === "string"
   );
 }
 
@@ -33,7 +37,7 @@ function render(html: string): void {
 
 window.addEventListener("message", (event: MessageEvent) => {
   if (!isRenderMessage(event.data)) return;
-  render(event.data.html);
+  render(resolveHtml(event.data.html, event.data.base));
 });
 
 // Tell the content script we are ready to receive the HTML.

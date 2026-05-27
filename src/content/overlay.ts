@@ -3,13 +3,21 @@ const SANDBOX_URL = chrome.runtime.getURL("src/sandbox/index.html");
 const OVERLAY_ID = "ghp-preview-overlay";
 
 let overlay: HTMLIFrameElement | null = null;
-let pendingHtml: string | null = null;
+let pending: { html: string; base: string } | null = null;
 let readyListener: ((event: MessageEvent) => void) | null = null;
 
-/** Mount the sandbox iframe over the file content area and render the HTML. */
-export function showPreview(anchor: HTMLElement, html: string): void {
+/**
+ * Mount the sandbox iframe over the file content area and hand it the raw HTML
+ * plus the base URL. The sandbox rewrites and renders the HTML under its own
+ * permissive CSP, so no rewriting happens in github.com's CSP context.
+ */
+export function showPreview(
+  anchor: HTMLElement,
+  html: string,
+  base: string
+): void {
   hidePreview();
-  pendingHtml = html;
+  pending = { html, base };
 
   overlay = document.createElement("iframe");
   overlay.id = OVERLAY_ID;
@@ -23,10 +31,15 @@ export function showPreview(anchor: HTMLElement, html: string): void {
       data !== null &&
       data.source === "github-html-preview" &&
       data.type === "ready" &&
-      pendingHtml !== null
+      pending !== null
     ) {
       overlay?.contentWindow?.postMessage(
-        { source: "github-html-preview", type: "render", html: pendingHtml },
+        {
+          source: "github-html-preview",
+          type: "render",
+          html: pending.html,
+          base: pending.base,
+        },
         "*"
       );
     }
@@ -45,7 +58,7 @@ export function hidePreview(): void {
     overlay.remove();
     overlay = null;
   }
-  pendingHtml = null;
+  pending = null;
 }
 
 export function isPreviewVisible(): boolean {
