@@ -63,30 +63,64 @@ function injectFetchProxy(doc: Document, base: string): void {
 // Runs inside the opaque-origin sandboxed iframe, so the sandbox page cannot
 // measure the height directly and relies on this self-contained reporter.
 //
-// Measure `body.scrollHeight` rather than `documentElement.scrollHeight`: the
-// inner iframe is sized to the overlay's height, so for pages that reset
-// `html, body { height: 100% }` the body fills the viewport. `documentElement`
-// adds the body's margins on top of that full height, reporting a value larger
-// than the iframe. The overlay then grows, the body grows with it, and the next
-// report grows again — an unbounded feedback loop that leaves a huge empty
-// scroll area below the content. `body.scrollHeight` excludes the body's own
-// margins, so it equals the iframe height at the fixed point and converges,
-// while still tracking real content overflow when the page is genuinely taller.
+// The trap here is a feedback loop. The overlay iframe is resized to the height
+// we report, which resizes this iframe, which changes its viewport. Pages that
+// fill the viewport (`height: 100%` / `min-height: 100vh`) AND have padding on
+// the filling box under the default `content-box` sizing then measure taller
+// than the viewport by that padding: the content box is forced to the full
+// viewport height and the padding is added on top. Reporting that grows the
+// overlay, which grows the viewport, which grows the measurement again — an
+// unbounded loop that leaves a huge empty scroll area below the content
+// (reproduced with `body { min-height: 100vh; padding: 40px }`).
+//
+// The fix is to break the loop at its trigger: a height-only change of this
+// iframe is almost always just the overlay adopting the height we asked for, so
+// re-measuring then is what feeds back. We therefore re-measure only when the
+// content height can genuinely change for a reason other than our own resize:
+// a width change (reflow), a DOM mutation (e.g. Swagger UI rendering), or a
+// sub-resource/font load. Pure height changes are ignored, so the loop cannot
+// iterate while real content growth is still tracked.
 const HEIGHT_REPORTER = `(function(){
-  var last = -1;
-  function post(){
+  var lastHeight = -1, lastWidth = -1, scheduled = false;
+  function measure(){
+    scheduled = false;
     var body = document.body;
-    var h = body ? body.scrollHeight : document.documentElement.scrollHeight;
-    if (h === last) return;
-    last = h;
+    var h = Math.max(
+      document.documentElement.scrollHeight,
+      body ? body.scrollHeight : 0
+    );
+    if (h === lastHeight) return;
+    lastHeight = h;
     parent.postMessage({source:"github-html-preview",type:"content-height",height:h},"*");
   }
-  window.addEventListener("load", post);
-  window.addEventListener("resize", post);
-  if (typeof ResizeObserver !== "undefined") {
-    new ResizeObserver(post).observe(document.documentElement);
+  function schedule(){
+    if (scheduled) return;
+    scheduled = true;
+    (window.requestAnimationFrame || window.setTimeout)(measure);
   }
-  post();
+  function onResize(){
+    var w = document.documentElement.clientWidth;
+    if (w === lastWidth) return;
+    lastWidth = w;
+    schedule();
+  }
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(onResize).observe(document.documentElement);
+  }
+  window.addEventListener("resize", onResize);
+  if (typeof MutationObserver !== "undefined") {
+    new MutationObserver(schedule).observe(document.documentElement, {
+      subtree: true, childList: true, attributes: true, characterData: true
+    });
+  }
+  // Capture phase catches load events from images / sub-resources (which do not
+  // bubble) as well as the window load.
+  window.addEventListener("load", schedule, true);
+  try {
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+  } catch (e) {}
+  lastWidth = document.documentElement.clientWidth;
+  schedule();
 })();`;
 
 function injectHeightReporter(doc: Document): void {
