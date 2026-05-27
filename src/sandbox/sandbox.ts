@@ -35,7 +35,27 @@ function render(html: string): void {
   document.body.appendChild(frame);
 }
 
+function isContentHeightMessage(
+  data: unknown
+): data is { source: string; type: string; height: number } {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    (data as { source?: unknown }).source === "github-html-preview" &&
+    (data as { type?: unknown }).type === "content-height" &&
+    typeof (data as { height?: unknown }).height === "number"
+  );
+}
+
 window.addEventListener("message", (event: MessageEvent) => {
+  // Height reports come from the inner preview iframe; relay them to the
+  // content script so it can resize the overlay iframe to fit the content.
+  if (event.source === frame?.contentWindow && isContentHeightMessage(event.data)) {
+    if (window.parent !== window) {
+      window.parent.postMessage(event.data, "*");
+    }
+    return;
+  }
   if (!isRenderMessage(event.data)) return;
   render(resolveHtml(event.data.html, event.data.base));
 });

@@ -14,8 +14,35 @@ export function resolveHtml(html: string, base: string): string {
   rewriteAttribute(doc, "script[src]", "src", base);
   rewriteAttribute(doc, "img[src]", "src", base);
   rewriteAttribute(doc, "source[src]", "src", base);
+  injectHeightReporter(doc);
 
   return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+}
+
+// Posts the rendered document height up to the sandbox page so the overlay
+// iframe can grow to fit its content instead of clipping it at a fixed height.
+// Runs inside the opaque-origin sandboxed iframe, so the sandbox page cannot
+// measure the height directly and relies on this self-contained reporter.
+const HEIGHT_REPORTER = `(function(){
+  function post(){
+    var h = Math.max(
+      document.documentElement.scrollHeight,
+      document.body ? document.body.scrollHeight : 0
+    );
+    parent.postMessage({source:"github-html-preview",type:"content-height",height:h},"*");
+  }
+  window.addEventListener("load", post);
+  window.addEventListener("resize", post);
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(post).observe(document.documentElement);
+  }
+  post();
+})();`;
+
+function injectHeightReporter(doc: Document): void {
+  const script = doc.createElement("script");
+  script.textContent = HEIGHT_REPORTER;
+  (doc.body ?? doc.documentElement).appendChild(script);
 }
 
 function injectBase(doc: Document, base: string): void {

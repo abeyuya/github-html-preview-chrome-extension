@@ -42,6 +42,17 @@ export function showPreview(
         "*"
       );
     }
+
+    // Grow the overlay to fit the rendered content so long pages are not
+    // clipped at the default viewport-based height.
+    if (
+      data.type === "content-height" &&
+      typeof data.height === "number" &&
+      overlay !== null &&
+      data.height > 0
+    ) {
+      overlay.style.height = `${data.height}px`;
+    }
   };
   window.addEventListener("message", messageListener);
 
