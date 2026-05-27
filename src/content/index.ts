@@ -70,6 +70,8 @@ function injectButton(): void {
   if (document.getElementById(BUTTON_ID)) return;
   const toolbar = findToolbar();
   if (!toolbar) return;
+  // Only show the button once the source is actually extractable.
+  if (extractSource() === null) return;
 
   toggleButton = createToggleButton(toggle);
   const wrapper = document.createElement("span");
