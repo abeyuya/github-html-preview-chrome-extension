@@ -1,9 +1,12 @@
+import { authenticatedRawUrl, type BlobLocation } from "./resolvePaths";
+
 const SANDBOX_URL = chrome.runtime.getURL("src/sandbox/index.html");
 
 const OVERLAY_ID = "ghp-preview-overlay";
 
 let overlay: HTMLIFrameElement | null = null;
 let pending: { html: string; base: string } | null = null;
+let currentLocation: BlobLocation | null = null;
 let hiddenContent: HTMLElement | null = null;
 let previousDisplay = "";
 let messageListener: ((event: MessageEvent) => void) | null = null;
@@ -16,10 +19,12 @@ let messageListener: ((event: MessageEvent) => void) | null = null;
 export function showPreview(
   anchor: HTMLElement,
   html: string,
-  base: string
+  base: string,
+  loc: BlobLocation
 ): void {
   hidePreview();
   pending = { html, base };
+  currentLocation = loc;
 
   overlay = document.createElement("iframe");
   overlay.id = OVERLAY_ID;
@@ -43,6 +48,10 @@ export function showPreview(
       );
     }
 
+    if (data.type === "resource-request") {
+      handleResourceRequest(data.id, data.url);
+    }
+
     // Grow the overlay to fit the rendered content so long pages are not
     // clipped at the default viewport-based height.
     if (
@@ -64,6 +73,45 @@ export function showPreview(
   anchor.parentElement?.insertBefore(overlay, anchor);
 }
 
+/**
+ * Fetch a same-repo raw asset on behalf of the sandboxed preview, using the
+ * page's GitHub session so private repositories work, then post the bytes back
+ * to the sandbox. Requests outside the previewed repo/ref scope are refused.
+ */
+async function handleResourceRequest(id: unknown, url: unknown): Promise<void> {
+  const reply = (payload: Record<string, unknown>) => {
+    overlay?.contentWindow?.postMessage(
+      { source: "github-html-preview", type: "resource-response", id, ...payload },
+      "*"
+    );
+  };
+
+  if (typeof id !== "string" || typeof url !== "string" || !currentLocation) {
+    reply({ error: "Invalid resource request." });
+    return;
+  }
+
+  const target = authenticatedRawUrl(url, currentLocation);
+  if (!target) {
+    reply({ error: "Resource is outside the previewed repository scope." });
+    return;
+  }
+
+  try {
+    const res = await fetch(target);
+    const body = await res.arrayBuffer();
+    reply({
+      ok: res.ok,
+      status: res.status,
+      statusText: res.statusText,
+      contentType: res.headers.get("content-type") ?? "",
+      body,
+    });
+  } catch (err) {
+    reply({ error: err instanceof Error ? err.message : "Fetch failed." });
+  }
+}
+
 export function hidePreview(): void {
   if (messageListener) {
     window.removeEventListener("message", messageListener);
@@ -79,6 +127,7 @@ export function hidePreview(): void {
     previousDisplay = "";
   }
   pending = null;
+  currentLocation = null;
 }
 
 export function isPreviewVisible(): boolean {

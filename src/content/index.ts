@@ -59,7 +59,7 @@ function toggle(): void {
   const container = findContentContainer();
   if (!source || !location || !container) return;
 
-  showPreview(container, source, rawBaseUrl(location));
+  showPreview(container, source, rawBaseUrl(location), location);
   setButtonState(toggleButton, true);
 }
 

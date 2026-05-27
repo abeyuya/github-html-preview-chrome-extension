@@ -47,6 +47,15 @@ function isContentHeightMessage(
   );
 }
 
+function isPreviewMessage(data: unknown): data is { type: string } {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    (data as { source?: unknown }).source === "github-html-preview" &&
+    typeof (data as { type?: unknown }).type === "string"
+  );
+}
+
 window.addEventListener("message", (event: MessageEvent) => {
   // Height reports come from the inner preview iframe; relay them to the
   // content script so it can resize the overlay iframe to fit the content.
@@ -56,6 +65,27 @@ window.addEventListener("message", (event: MessageEvent) => {
     }
     return;
   }
+
+  // Relay the resource proxy protocol: requests from the previewed iframe
+  // bubble up to the content script, responses come back down to the frame.
+  if (isPreviewMessage(event.data)) {
+    if (
+      event.data.type === "resource-request" &&
+      frame &&
+      event.source === frame.contentWindow
+    ) {
+      window.parent.postMessage(event.data, "*");
+      return;
+    }
+    if (
+      event.data.type === "resource-response" &&
+      event.source === window.parent
+    ) {
+      frame?.contentWindow?.postMessage(event.data, "*");
+      return;
+    }
+  }
+
   if (!isRenderMessage(event.data)) return;
   render(resolveHtml(event.data.html, event.data.base));
 });
