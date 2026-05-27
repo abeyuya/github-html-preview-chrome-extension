@@ -10,6 +10,7 @@ export function resolveHtml(html: string, base: string): string {
   const doc = new DOMParser().parseFromString(html, "text/html");
 
   injectBase(doc, base);
+  injectUrlShim(doc, base);
   rewriteAttribute(doc, "link[href]", "href", base);
   rewriteAttribute(doc, "script[src]", "src", base);
   rewriteAttribute(doc, "img[src]", "src", base);
@@ -43,6 +44,41 @@ function injectHeightReporter(doc: Document): void {
   const script = doc.createElement("script");
   script.textContent = HEIGHT_REPORTER;
   (doc.body ?? doc.documentElement).appendChild(script);
+}
+
+// The preview runs inside a srcdoc iframe sandboxed without `allow-same-origin`,
+// so the page's `window.location.href` is `about:srcdoc` — a "cannot-be-a-base"
+// URL. Page scripts that resolve relative paths against `location` (e.g. Swagger
+// UI resolving its spec URL) call `new URL(rel, location.href)`, which throws
+// "Failed to construct 'URL': Invalid URL" and aborts the page, leaving a blank
+// preview. The `<base>` tag only fixes declarative resource loading, not runtime
+// URL construction. This shim retries failing `URL` constructions against the
+// real base, so it only changes behavior for calls that would otherwise throw.
+function injectUrlShim(doc: Document, base: string): void {
+  const head = doc.head;
+  if (!head) return;
+  const script = doc.createElement("script");
+  script.textContent = `(function () {
+  var BASE = ${JSON.stringify(base)};
+  var Native = window.URL;
+  if (!Native) return;
+  function Patched(url, base) {
+    if (arguments.length >= 2) {
+      try { return new Native(url, base); }
+      catch (e) { try { return new Native(url, BASE); } catch (_) { throw e; } }
+    }
+    try { return new Native(url); }
+    catch (e) { try { return new Native(url, BASE); } catch (_) { throw e; } }
+  }
+  Patched.prototype = Native.prototype;
+  ["createObjectURL", "revokeObjectURL", "canParse", "parse"].forEach(function (m) {
+    if (typeof Native[m] === "function") {
+      Patched[m] = function () { return Native[m].apply(Native, arguments); };
+    }
+  });
+  try { window.URL = Patched; } catch (_) {}
+})();`;
+  head.insertBefore(script, head.firstChild);
 }
 
 function injectBase(doc: Document, base: string): void {
