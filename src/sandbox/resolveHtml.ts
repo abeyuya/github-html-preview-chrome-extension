@@ -62,12 +62,23 @@ function injectFetchProxy(doc: Document, base: string): void {
 // iframe can grow to fit its content instead of clipping it at a fixed height.
 // Runs inside the opaque-origin sandboxed iframe, so the sandbox page cannot
 // measure the height directly and relies on this self-contained reporter.
+//
+// Measure `body.scrollHeight` rather than `documentElement.scrollHeight`: the
+// inner iframe is sized to the overlay's height, so for pages that reset
+// `html, body { height: 100% }` the body fills the viewport. `documentElement`
+// adds the body's margins on top of that full height, reporting a value larger
+// than the iframe. The overlay then grows, the body grows with it, and the next
+// report grows again — an unbounded feedback loop that leaves a huge empty
+// scroll area below the content. `body.scrollHeight` excludes the body's own
+// margins, so it equals the iframe height at the fixed point and converges,
+// while still tracking real content overflow when the page is genuinely taller.
 const HEIGHT_REPORTER = `(function(){
+  var last = -1;
   function post(){
-    var h = Math.max(
-      document.documentElement.scrollHeight,
-      document.body ? document.body.scrollHeight : 0
-    );
+    var body = document.body;
+    var h = body ? body.scrollHeight : document.documentElement.scrollHeight;
+    if (h === last) return;
+    last = h;
     parent.postMessage({source:"github-html-preview",type:"content-height",height:h},"*");
   }
   window.addEventListener("load", post);
