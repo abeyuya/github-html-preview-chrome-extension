@@ -21,8 +21,12 @@ function render(html: string): void {
     frame.remove();
   }
   frame = document.createElement("iframe");
-  // No "allow-scripts": JavaScript inside the previewed HTML never runs.
-  frame.setAttribute("sandbox", "allow-same-origin");
+  // Run the previewed HTML's JavaScript inside this isolated iframe. It stays
+  // within the MV3 sandbox page (opaque origin, no extension privileges, no
+  // same-origin access to GitHub), and "allow-same-origin" is intentionally
+  // omitted so the framed content cannot drop its own sandbox; the opaque
+  // origin still loads CORS-enabled assets from raw.githubusercontent.com.
+  frame.setAttribute("sandbox", "allow-scripts allow-popups allow-forms");
   frame.srcdoc = html;
   document.body.appendChild(frame);
 }

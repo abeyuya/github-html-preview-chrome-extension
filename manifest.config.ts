@@ -22,6 +22,23 @@ export default defineManifest({
   sandbox: {
     pages: ["src/sandbox/index.html"],
   },
+  // The previewed HTML runs inside a srcdoc iframe that inherits this sandbox
+  // page's CSP, so it must permit the external scripts/styles/assets an
+  // arbitrary previewed page may reference (e.g. Swagger UI's CDN bundle).
+  // Permissive policies and unsafe-eval are only allowed for the sandbox CSP,
+  // never for extension_pages.
+  content_security_policy: {
+    sandbox:
+      "sandbox allow-scripts allow-popups allow-forms; " +
+      "script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+      "style-src * 'unsafe-inline' data:; " +
+      "img-src * data: blob:; " +
+      "font-src * data:; " +
+      "connect-src *; " +
+      "frame-src *; " +
+      "child-src *; " +
+      "media-src * data: blob:;",
+  },
   web_accessible_resources: [
     {
       resources: ["src/sandbox/index.html"],
