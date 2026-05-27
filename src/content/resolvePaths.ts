@@ -226,7 +226,10 @@ function preludeSource(scope: string): string {
         return requestResource(url).then(function (d) {
           var headers = {};
           if (d.contentType) headers["content-type"] = d.contentType;
-          return new Response(d.ok ? d.body : null, {
+          var nullBody =
+            d.status === 101 || d.status === 103 || d.status === 204 ||
+            d.status === 205 || d.status === 304;
+          return new Response(d.ok && !nullBody ? d.body : null, {
             status: d.status,
             statusText: d.statusText || "",
             headers: headers
