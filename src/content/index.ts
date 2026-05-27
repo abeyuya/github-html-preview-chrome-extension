@@ -1,5 +1,5 @@
 import { extractSource } from "./extractSource";
-import { parseBlobLocation, resolveHtml } from "./resolvePaths";
+import { parseBlobLocation, rawBaseUrl } from "./resolvePaths";
 import { showPreview, hidePreview, isPreviewVisible } from "./overlay";
 import { createToggleButton, setButtonState, BUTTON_ID } from "./button";
 
@@ -14,11 +14,10 @@ const TOOLBAR_SELECTORS = [
 ];
 
 const CONTENT_SELECTORS = [
-  '[data-testid="blob-viewer-file-content"]',
-  ".react-code-view-bottom-padding",
-  ".react-code-view",
-  ".Box.mt-3 .blob-wrapper",
+  ".react-code-file-contents",
+  '[data-hpc="true"]',
   ".blob-wrapper",
+  "table.highlight",
 ];
 
 let toggleButton: HTMLButtonElement | null = null;
@@ -60,9 +59,7 @@ function toggle(): void {
   const container = findContentContainer();
   if (!source || !location || !container) return;
 
-  const html = resolveHtml(source, location);
-  container.style.position = "relative";
-  showPreview(container, html);
+  showPreview(container, source, rawBaseUrl(location));
   setButtonState(toggleButton, true);
 }
 
