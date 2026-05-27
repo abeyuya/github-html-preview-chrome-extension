@@ -16,6 +16,12 @@ function isRenderMessage(data: unknown): data is RenderMessage {
 
 let frame: HTMLIFrameElement | null = null;
 
+// Injected into the previewed HTML so it can report its content height. The
+// inner iframe is opaque-origin sandboxed, so its document cannot be measured
+// from outside; instead it posts its own scrollHeight up to this sandbox page,
+// which forwards it to the content script to size the overlay to fit.
+const HEIGHT_REPORTER = `<script>(function(){function r(){var d=document;var h=Math.max(d.documentElement.scrollHeight,d.body?d.body.scrollHeight:0);parent.postMessage({source:"github-html-preview",type:"height",height:h},"*");}window.addEventListener("load",r);window.addEventListener("resize",r);if(window.ResizeObserver){new ResizeObserver(r).observe(document.documentElement);}r();})();<\/script>`;
+
 function render(html: string): void {
   if (frame) {
     frame.remove();
@@ -27,11 +33,30 @@ function render(html: string): void {
   // omitted so the framed content cannot drop its own sandbox; the opaque
   // origin still loads CORS-enabled assets from raw.githubusercontent.com.
   frame.setAttribute("sandbox", "allow-scripts allow-popups allow-forms");
-  frame.srcdoc = html;
+  frame.srcdoc = html + HEIGHT_REPORTER;
   document.body.appendChild(frame);
 }
 
 window.addEventListener("message", (event: MessageEvent) => {
+  // Forward content-height reports from the previewed page up to the content
+  // script so it can size the overlay to the rendered content.
+  const data = event.data;
+  if (
+    frame &&
+    event.source === frame.contentWindow &&
+    typeof data === "object" &&
+    data !== null &&
+    data.source === "github-html-preview" &&
+    data.type === "height" &&
+    typeof data.height === "number"
+  ) {
+    window.parent.postMessage(
+      { source: "github-html-preview", type: "height", height: data.height },
+      "*"
+    );
+    return;
+  }
+
   if (!isRenderMessage(event.data)) return;
   render(event.data.html);
 });
