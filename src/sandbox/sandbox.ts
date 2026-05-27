@@ -1,7 +1,10 @@
+import { resolveHtml } from "./resolveHtml";
+
 interface RenderMessage {
   source: "github-html-preview";
   type: "render";
   html: string;
+  base: string;
 }
 
 function isRenderMessage(data: unknown): data is RenderMessage {
@@ -10,7 +13,8 @@ function isRenderMessage(data: unknown): data is RenderMessage {
     data !== null &&
     (data as RenderMessage).source === "github-html-preview" &&
     (data as RenderMessage).type === "render" &&
-    typeof (data as RenderMessage).html === "string"
+    typeof (data as RenderMessage).html === "string" &&
+    typeof (data as RenderMessage).base === "string"
   );
 }
 
@@ -31,6 +35,18 @@ function render(html: string): void {
   document.body.appendChild(frame);
 }
 
+function isContentHeightMessage(
+  data: unknown
+): data is { source: string; type: string; height: number } {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    (data as { source?: unknown }).source === "github-html-preview" &&
+    (data as { type?: unknown }).type === "content-height" &&
+    typeof (data as { height?: unknown }).height === "number"
+  );
+}
+
 function isPreviewMessage(data: unknown): data is { type: string } {
   return (
     typeof data === "object" &&
@@ -41,27 +57,37 @@ function isPreviewMessage(data: unknown): data is { type: string } {
 }
 
 window.addEventListener("message", (event: MessageEvent) => {
-  if (isRenderMessage(event.data)) {
-    render(event.data.html);
+  // Height reports come from the inner preview iframe; relay them to the
+  // content script so it can resize the overlay iframe to fit the content.
+  if (event.source === frame?.contentWindow && isContentHeightMessage(event.data)) {
+    if (window.parent !== window) {
+      window.parent.postMessage(event.data, "*");
+    }
     return;
   }
-  if (!isPreviewMessage(event.data)) return;
 
-  // Relay the resource proxy protocol between the previewed srcdoc iframe and
-  // the content script: requests bubble up to the parent, responses go back
-  // down to the frame.
-  if (
-    event.data.type === "resource-request" &&
-    frame &&
-    event.source === frame.contentWindow
-  ) {
-    window.parent.postMessage(event.data, "*");
-  } else if (
-    event.data.type === "resource-response" &&
-    event.source === window.parent
-  ) {
-    frame?.contentWindow?.postMessage(event.data, "*");
+  // Relay the resource proxy protocol: requests from the previewed iframe
+  // bubble up to the content script, responses come back down to the frame.
+  if (isPreviewMessage(event.data)) {
+    if (
+      event.data.type === "resource-request" &&
+      frame &&
+      event.source === frame.contentWindow
+    ) {
+      window.parent.postMessage(event.data, "*");
+      return;
+    }
+    if (
+      event.data.type === "resource-response" &&
+      event.source === window.parent
+    ) {
+      frame?.contentWindow?.postMessage(event.data, "*");
+      return;
+    }
   }
+
+  if (!isRenderMessage(event.data)) return;
+  render(resolveHtml(event.data.html, event.data.base));
 });
 
 // Tell the content script we are ready to receive the HTML.

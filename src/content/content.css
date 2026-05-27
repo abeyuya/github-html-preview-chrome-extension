@@ -31,12 +31,12 @@
 }
 
 #ghp-preview-overlay {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
-  height: 100%;
+  /* Fallback height until the sandbox reports the rendered content height,
+     after which the iframe grows to fit and the page scrolls normally. */
+  height: calc(100vh - 120px);
   min-height: 480px;
   border: 0;
   background: #fff;
-  z-index: 5;
 }
