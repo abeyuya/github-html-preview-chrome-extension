@@ -7,9 +7,34 @@ const OVERLAY_ID = "ghp-preview-overlay";
 let overlay: HTMLIFrameElement | null = null;
 let pending: { html: string; base: string } | null = null;
 let currentLocation: BlobLocation | null = null;
-let hiddenContent: HTMLElement | null = null;
-let previousDisplay = "";
+let hiddenElements: { el: HTMLElement; previousDisplay: string }[] = [];
 let messageListener: ((event: MessageEvent) => void) | null = null;
+
+// GitHub's React blob view layers a transparent textarea over the highlighted
+// code so the source can be selected and copied. It is a sibling of the code
+// container rather than a child, so hiding only the code leaves this textarea
+// on top of the preview iframe, where it swallows clicks and hijacks text
+// selection onto the hidden source. Hide it alongside the code container.
+const SELECTION_OVERLAY_SELECTORS = [
+  "#read-only-cursor-text-area",
+  "textarea.react-blob-textarea",
+];
+
+function hideElement(el: HTMLElement): void {
+  hiddenElements.push({ el, previousDisplay: el.style.display });
+  el.style.display = "none";
+}
+
+function findSelectionOverlays(anchor: HTMLElement): HTMLElement[] {
+  const scope = anchor.parentElement ?? document;
+  const found = new Set<HTMLElement>();
+  for (const selector of SELECTION_OVERLAY_SELECTORS) {
+    for (const el of scope.querySelectorAll<HTMLElement>(selector)) {
+      found.add(el);
+    }
+  }
+  return [...found];
+}
 
 /**
  * Replace the raw source view with the sandbox iframe and hand it the raw HTML
@@ -66,10 +91,12 @@ export function showPreview(
   window.addEventListener("message", messageListener);
 
   // Hide the original source view instead of overlaying it, so the raw code
-  // never shows through below the preview.
-  hiddenContent = anchor;
-  previousDisplay = anchor.style.display;
-  anchor.style.display = "none";
+  // never shows through below the preview, and hide the transparent selection
+  // textarea layered on top of it so clicks and selection reach the preview.
+  hideElement(anchor);
+  for (const el of findSelectionOverlays(anchor)) {
+    hideElement(el);
+  }
   anchor.parentElement?.insertBefore(overlay, anchor);
 }
 
@@ -121,11 +148,10 @@ export function hidePreview(): void {
     overlay.remove();
     overlay = null;
   }
-  if (hiddenContent) {
-    hiddenContent.style.display = previousDisplay;
-    hiddenContent = null;
-    previousDisplay = "";
+  for (const { el, previousDisplay } of hiddenElements) {
+    el.style.display = previousDisplay;
   }
+  hiddenElements = [];
   pending = null;
   currentLocation = null;
 }
