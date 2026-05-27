@@ -11,10 +11,12 @@ let hiddenElements: { el: HTMLElement; previousDisplay: string }[] = [];
 let messageListener: ((event: MessageEvent) => void) | null = null;
 
 // GitHub's React blob view layers a transparent textarea over the highlighted
-// code so the source can be selected and copied. It is a sibling of the code
-// container rather than a child, so hiding only the code leaves this textarea
-// on top of the preview iframe, where it swallows clicks and hijacks text
-// selection onto the hidden source. Hide it alongside the code container.
+// code so the source can be selected and copied. It is not a descendant of the
+// code container, so hiding only the code leaves this textarea on top of the
+// preview iframe, where it swallows clicks and hijacks text selection onto the
+// hidden source. React mounts it outside the code container's parent (next to
+// the line-menu/copilot positioners), so it must be located document-wide
+// rather than scoped to the code container, and hidden alongside the code.
 const SELECTION_OVERLAY_SELECTORS = [
   "#read-only-cursor-text-area",
   "textarea.react-blob-textarea",
@@ -25,11 +27,10 @@ function hideElement(el: HTMLElement): void {
   el.style.display = "none";
 }
 
-function findSelectionOverlays(anchor: HTMLElement): HTMLElement[] {
-  const scope = anchor.parentElement ?? document;
+function findSelectionOverlays(): HTMLElement[] {
   const found = new Set<HTMLElement>();
   for (const selector of SELECTION_OVERLAY_SELECTORS) {
-    for (const el of scope.querySelectorAll<HTMLElement>(selector)) {
+    for (const el of document.querySelectorAll<HTMLElement>(selector)) {
       found.add(el);
     }
   }
@@ -94,7 +95,7 @@ export function showPreview(
   // never shows through below the preview, and hide the transparent selection
   // textarea layered on top of it so clicks and selection reach the preview.
   hideElement(anchor);
-  for (const el of findSelectionOverlays(anchor)) {
+  for (const el of findSelectionOverlays()) {
     hideElement(el);
   }
   anchor.parentElement?.insertBefore(overlay, anchor);
