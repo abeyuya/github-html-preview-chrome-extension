@@ -29,7 +29,19 @@ npm run build   # dist/ にビルド成果物を出力
 npm run dev
 ```
 
-## インストール（未パッケージ版）
+## インストール（Releases からダウンロード）
+
+ビルド済みの zip を [Releases ページ](https://github.com/abeyuya/github-html-preview-chrome-extension/releases) から取得して読み込めます。
+
+1. [Releases ページ](https://github.com/abeyuya/github-html-preview-chrome-extension/releases) を開き、最新リリースの **Assets** から `github-html-preview-local-vX.Y.zip` をダウンロードします。
+2. ダウンロードした zip を任意の場所に解凍します（フォルダごと保持してください。削除すると拡張機能が動かなくなります）。
+3. Chrome で `chrome://extensions` を開きます。
+4. 右上の「デベロッパーモード」を ON にします。
+5. 「パッケージ化されていない拡張機能を読み込む」をクリックし、解凍したフォルダを選択します。
+
+> Chrome Web Store には未公開のため、更新は手動で行ってください（新しいリリースの zip を再度ダウンロード → 解凍 → `chrome://extensions` で「更新」または再読み込み）。
+
+## インストール（ソースからビルド）
 
 1. `npm install && npm run build` を実行して `dist/` を生成します。
 2. Chrome で `chrome://extensions` を開きます。
