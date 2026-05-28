@@ -48,11 +48,22 @@ if (!executablePath || !existsSync(executablePath)) {
 }
 
 const samples = [
-  { name: 'basic', path: 'basic.html', wait: 2500 },
+  // click: プレビュー内の要素を実クリックして反応を観測する（クリック透過バグ検知）
+  { name: 'basic', path: 'basic.html', wait: 2500, click: { sel: '#add', listSel: '#list > li' } },
   { name: 'relative-assets', path: 'relative-assets/index.html', wait: 3500 },
   { name: 'swagger', path: 'swagger/index.html', wait: 7000 },
-  { name: 'long-content', path: 'long-content.html', wait: 3000 },
+  // blank: プレビュー下にスクロール可能な空白が残っていないか（末尾空白エリア検知）。
+  // GitHub 本来の blob セクション下端パディング（実測 ~57px）は許容し、元ソースの
+  // 入れ物が残るバグ（実測 1000px超）を捉えるため maxGap は余裕をもって 150px。
+  { name: 'long-content', path: 'long-content.html', wait: 3000, blank: { maxGap: 150 } },
 ];
+
+// 内側 srcdoc iframe（allow-same-origin なしの opaque origin）。Playwright は
+// プロトコル層でフレームに attach できるので、github.com 側 JS では読めない
+// 内側 DOM もここからは観測できる。
+function findInnerFrame(page) {
+  return page.frames().find((f) => f.url() === 'about:srcdoc') || null;
+}
 
 const ctx = await chromium.launchPersistentContext(`${OUTDIR}/profile`, {
   executablePath,
@@ -112,6 +123,81 @@ for (const s of samples) {
           srcDisplay: src ? getComputedStyle(src).display : 'no-src-el',
         };
       });
+
+      const inner = findInnerFrame(page);
+      r.innerFrameFound = !!inner;
+
+      // 末尾空白エリア検知: プレビュー(overlay)より下に、ページがスクロールできる
+      // 余白が残っていないか。元ソース表示の入れ物（cursorContainer 等）が hide され
+      // ず元の行数ぶんの高さを保持すると、プレビュー下に空白が残る（実際に発生）。
+      // 内側 iframe ではなく github.com ページ全体の高さで測るのがポイント。
+      if (s.blank) {
+        const m = await page.evaluate(() => {
+          const o = document.querySelector('#ghp-preview-overlay');
+          if (!o) return null;
+          const rect = o.getBoundingClientRect();
+          return {
+            overlayBottom: Math.round(rect.bottom + window.scrollY),
+            pageScrollHeight: document.documentElement.scrollHeight,
+          };
+        });
+        if (!m) {
+          r.blank = { ok: false, reason: 'overlay 取得失敗' };
+        } else {
+          const blankBelow = m.pageScrollHeight - m.overlayBottom;
+          r.blank = {
+            ok: blankBelow <= s.blank.maxGap,
+            overlayBottom: m.overlayBottom,
+            pageScrollHeight: m.pageScrollHeight,
+            blankBelow,
+            note:
+              blankBelow > s.blank.maxGap
+                ? `プレビュー下に ${blankBelow}px の空白（元ソースの入れ物が hide されていない疑い）`
+                : undefined,
+          };
+        }
+      }
+
+      // クリック透過検知: ユーザーと同じく画面座標を実マウスクリックし、反応
+      // （行追加）を観測する。GitHub の cursorContainer / 透明 textarea が前面に
+      // 残ると実イベントがそちらに奪われ、ボタンに届かず行が増えない。
+      // （JS 直叩きでは前面要素を素通りして誤検知するため、必ず実クリックで測る。）
+      if (s.click) {
+        if (!inner) {
+          r.click = { ok: false, reason: 'inner frame 取得失敗（クリック検証不可）' };
+        } else {
+          const before = await inner.evaluate(
+            (sel) => document.querySelectorAll(sel).length,
+            s.click.listSel,
+          );
+          const box = await inner.locator(s.click.sel).boundingBox();
+          let topTag = null;
+          if (box) {
+            const cx = Math.round(box.x + box.width / 2);
+            const cy = Math.round(box.y + box.height / 2);
+            // クリックを奪っている要素を記録（原因切り分け用）
+            topTag = await page.evaluate(([x, y]) => {
+              const el = document.elementFromPoint(x, y);
+              if (!el) return '(null)';
+              const cls = typeof el.className === 'string' ? el.className : '';
+              return el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (cls ? '.' + cls.trim().split(/\s+/).join('.') : '');
+            }, [cx, cy]);
+            await page.mouse.click(cx, cy);
+            await page.waitForTimeout(300);
+          }
+          const after = await inner.evaluate(
+            (sel) => document.querySelectorAll(sel).length,
+            s.click.listSel,
+          );
+          r.click = {
+            ok: box != null && after > before,
+            before,
+            after,
+            topElementAtTarget: topTag,
+            note: after > before ? undefined : `クリックがボタンに届かない（前面要素: ${topTag}）`,
+          };
+        }
+      }
 
       await page.screenshot({ path: `${OUTDIR}/${s.name}.png`, fullPage: false });
 
