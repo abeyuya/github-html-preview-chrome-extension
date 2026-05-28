@@ -17,9 +17,17 @@ let messageListener: ((event: MessageEvent) => void) | null = null;
 // hidden source. React mounts it outside the code container's parent (next to
 // the line-menu/copilot positioners), so it must be located document-wide
 // rather than scoped to the code container, and hidden alongside the code.
+// The cursor container is a separate sibling of both the code container and the
+// selection textarea (not an ancestor of either). It is sized to the full
+// original source height and keeps `pointer-events`, so on top of the preview a
+// bare child div of it is the topmost element at the preview's coordinates and
+// swallows clicks, while below the (typically shorter) preview it reserves the
+// original line count's height and leaves a tall blank scroll area. Hiding the
+// textarea alone does not touch it, so it must be hidden as its own target.
 const SELECTION_OVERLAY_SELECTORS = [
   "#read-only-cursor-text-area",
   "textarea.react-blob-textarea",
+  '[class*="cursorContainer"]',
 ];
 
 function hideElement(el: HTMLElement): void {

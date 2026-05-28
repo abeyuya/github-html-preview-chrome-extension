@@ -33,6 +33,11 @@
 #ghp-preview-overlay {
   display: block;
   width: 100%;
+  /* GitHub's hidden scroll container, which we insert into, sets
+     pointer-events: none; the iframe inherits it (pointer-events is inherited)
+     and swallows nothing — clicks fall through to the code layer behind and
+     never reach the preview. Restore interactivity explicitly. */
+  pointer-events: auto;
   /* Fallback height until the sandbox reports the rendered content height,
      after which the iframe grows to fit and the page scrolls normally. */
   height: calc(100vh - 120px);
