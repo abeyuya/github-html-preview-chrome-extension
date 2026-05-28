@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Long Content Sample</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        line-height: 1.7;
+        color: #1f2328;
+        background: #ffffff;
+      }
+      h1 {
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #d0d7de;
+        scroll-margin-top: 1rem;
+      }
+      .lead {
+        color: #57606a;
+      }
+      nav.toc {
+        border: 1px solid #d0d7de;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin: 1.5rem 0;
+        background: #f6f8fa;
+      }
+      nav.toc ol {
+        margin: 0.5rem 0 0;
+        padding-left: 1.5rem;
+      }
+      nav.toc a {
+        color: #0969da;
+        text-decoration: none;
+      }
+      nav.toc a:hover {
+        text-decoration: underline;
+      }
+      .card {
+        border: 1px solid #d0d7de;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0;
+        background: #f6f8fa;
+      }
+      .top-link {
+        display: inline-block;
+        margin-top: 0.75rem;
+        font-size: 0.875rem;
+        color: #0969da;
+        text-decoration: none;
+      }
+      .top-link:hover {
+        text-decoration: underline;
+      }
+      footer {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 1px solid #d0d7de;
+        color: #57606a;
+        font-size: 0.875rem;
+      }
+      .progress {
+        position: sticky;
+        top: 0;
+        margin: -2rem -2rem 1.5rem;
+        height: 4px;
+        background: transparent;
+      }
+      .progress > span {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: #1f883d;
+        transition: width 0.1s linear;
+      }
+    </style>
+  </head>
+  <body id="top">
+    <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+
+    <h1>長尺コンテンツのサンプル</h1>
+    <p class="lead">
+      このページはビューポートより十分に背の高い長文コンテンツです。プレビューの
+      <strong>高さ追従</strong>（overlay がビューポートを超えて伸びること）と、
+      ページ内アンカーによるスクロール挙動を確認できます。外部リソースには依存せず、
+      CSS / JS はすべてインラインです。
+    </p>
+
+    <nav class="toc" aria-label="目次">
+      <strong>目次</strong>
+      <ol>
+        <li><a href="#section-1">はじめに</a></li>
+        <li><a href="#section-2">背景</a></li>
+        <li><a href="#section-3">用語</a></li>
+        <li><a href="#section-4">構成</a></li>
+        <li><a href="#section-5">レンダリング</a></li>
+        <li><a href="#section-6">高さ計測</a></li>
+        <li><a href="#section-7">相対パス解決</a></li>
+        <li><a href="#section-8">セキュリティ</a></li>
+        <li><a href="#section-9">既知の制限</a></li>
+        <li><a href="#section-10">トラブルシュート</a></li>
+        <li><a href="#section-11">FAQ</a></li>
+        <li><a href="#section-12">まとめ</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="section-1">1. はじめに</h2>
+    <p>
+      長いドキュメントでは、プレビュー領域が内容の高さに追従して伸びる必要があります。
+      固定高でクリップされると末尾が読めなくなってしまうため、内側 iframe が報告する
+      コンテンツ高さに合わせて overlay の高さが更新されることを、このページで確認します。
+    </p>
+    <div class="card">
+      <p>
+        ポイント: コンテンツがビューポートより高い場合、overlay の高さは
+        <code>window.innerHeight</code> を超えて設定されるはずです。短いページ（basic
+        など）とは挙動が異なります。
+      </p>
+    </div>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-2">2. 背景</h2>
+    <p>
+      GitHub の blob ページは HTML をソースとして表示するため、ブラウザ上で
+      レンダリング結果を直接確認できません。本拡張機能は、ソース表示を差し替えて
+      隔離された iframe 内でレンダリングし、ローカルでのプレビューを可能にします。
+    </p>
+    <p>
+      長文・多セクションのページは、見出しジャンプ・スクロール量・高さ追従など、
+      短いサンプルでは表面化しない挙動を露出させます。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-3">3. 用語</h2>
+    <p>
+      overlay iframe、sandbox ページ、inner srcdoc iframe の三段ネストでレンダリングが
+      行われます。各層の役割はリポジトリの <code>CLAUDE.md</code> を参照してください。
+    </p>
+    <p>
+      本サンプルでは特に「inner srcdoc iframe が報告する高さ」と「overlay の表示高さ」の
+      関係に注目します。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-4">4. 構成</h2>
+    <p>
+      このページは 12 個のセクションと目次、進捗バー（上部の sticky なバー）で構成されます。
+      進捗バーはスクロール位置に応じて伸び、JS が動作していることの確認も兼ねます。
+    </p>
+    <p>
+      各セクションには「先頭へ戻る」リンクがあり、ページ内アンカー遷移が正しく機能するかを
+      確認できます。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-5">5. レンダリング</h2>
+    <p>
+      インライン CSS が適用され、見出し・カード・目次が GitHub 風のスタイルで表示されれば
+      レンダリングは成功です。色やボーダー、角丸が反映されているかを目視で確認します。
+    </p>
+    <p>
+      ダークモードでも読めるよう <code>color-scheme</code> を宣言しつつ、明示的に
+      ライトの配色を指定しています。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-6">6. 高さ計測</h2>
+    <p>
+      内側 iframe は <code>scrollHeight</code> を計測して親へ通知し、overlay がその高さに
+      追従します。ビューポートを超える長文では、overlay の高さが大きく増えることを
+      確認してください。
+    </p>
+    <div class="card">
+      <p>
+        フィードバックループ防止のため、純粋な高さ変化は無視され、幅変化・DOM 変化・
+        サブリソース読み込み時にのみ再計測されます。長文でも末尾まで表示されるのが正しい挙動です。
+      </p>
+    </div>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-7">7. 相対パス解決</h2>
+    <p>
+      本サンプルは外部アセットを使いませんが、相対パスの画像や fetch を含むページでは、
+      <code>raw.githubusercontent.com</code> 配下への解決やプロキシ取得が行われます。
+      詳細は relative-assets / swagger サンプルを参照してください。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-8">8. セキュリティ</h2>
+    <p>
+      プレビュー対象 HTML は <code>allow-same-origin</code> を持たない隔離 iframe で実行され、
+      GitHub のセッションやクッキーには到達できません。任意の HTML / JS を安全に実行するための
+      境界です。
+    </p>
+    <p>
+      この隔離により、親ページ（github.com）から内側 DOM を読むことはできません。動作確認では
+      スクリーンショットと overlay の高さで描画を判断します。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-9">9. 既知の制限</h2>
+    <p>
+      <code>&lt;link rel="stylesheet"&gt;</code> や <code>&lt;script src&gt;</code> で読み込む
+      相対パスの CSS / JS は、raw が <code>text/plain</code> + <code>nosniff</code> で返すため
+      ブラウザが適用を拒否します。スタイルや動的処理はインラインにするか、CDN の絶対 URL を
+      利用してください。
+    </p>
+    <p>
+      また、短いコンテンツのページではプレビュー領域が既定のペイン高さで頭打ちになり、
+      下部に余白が出ることがあります。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-10">10. トラブルシュート</h2>
+    <p>
+      プレビューが表示されない場合は、拡張機能が最新ビルドで読み込まれているか、対象が
+      <code>.html</code> / <code>.htm</code> の blob ページかを確認します。ソース変更後は
+      <code>npm run build</code> と拡張機能の再読み込みが必要です。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-11">11. FAQ</h2>
+    <p>
+      <strong>Q. なぜ三段ネストの iframe なのか？</strong><br />
+      A. permissive な CSP を持つ sandbox ページと、隔離実行用の inner iframe を分けることで、
+      安全性と機能性を両立するためです。
+    </p>
+    <p>
+      <strong>Q. 高さが伸びないのはバグ？</strong><br />
+      A. ビューポートより短いページでは既定ペイン高さで頭打ちになります。長文の本ページで
+      高さが伸びていれば追従機能は正常です。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <h2 id="section-12">12. まとめ</h2>
+    <p>
+      ここまでスクロールして全セクションが読め、上部の進捗バーが右端付近まで伸びていれば、
+      長尺コンテンツのレンダリングと高さ追従は正常です。お疲れさまでした。
+    </p>
+    <a class="top-link" href="#top">▲ 先頭へ戻る</a>
+
+    <footer>
+      <p>Long Content Sample — github-html-preview-chrome-extension</p>
+    </footer>
+
+    <script>
+      // スクロール進捗バー。JS が動作していること、長文でスクロールできることの確認を兼ねる。
+      const bar = document.getElementById("bar");
+      function updateProgress() {
+        const doc = document.documentElement;
+        const max = doc.scrollHeight - doc.clientHeight;
+        const ratio = max > 0 ? Math.min(1, doc.scrollTop / max) : 0;
+        bar.style.width = (ratio * 100).toFixed(1) + "%";
+      }
+      window.addEventListener("scroll", updateProgress, { passive: true });
+      window.addEventListener("resize", updateProgress);
+      updateProgress();
+    </script>
+  </body>
+</html>
