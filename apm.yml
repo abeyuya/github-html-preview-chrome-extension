@@ -1,0 +1,10 @@
+name: github-html-preview-chrome-extension
+version: 1.0.0
+description: APM project for github-html-preview-chrome-extension
+author: Claude
+dependencies:
+  apm:
+  - abeyuya/skills/plugins/pr-review
+  mcp: []
+includes: auto
+scripts: {}

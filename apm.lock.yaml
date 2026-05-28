@@ -1,0 +1,31 @@
+lockfile_version: '1'
+generated_at: '2026-05-28T01:45:41.517974+00:00'
+apm_version: 0.15.0
+dependencies:
+- repo_url: abeyuya/skills
+  host: github.com
+  resolved_commit: 53095e7cd85f348fb092c422d3daeb4e4df80f03
+  virtual_path: plugins/pr-review
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .agents/skills/compose-review
+  - .agents/skills/distill-pr-reviews
+  - .agents/skills/post-pr-review
+  - .agents/skills/resolve-pr-threads
+  - .agents/skills/run-local-review
+  - .agents/skills/run-pr-review
+  - .claude/commands/pr-review-style-reference.md
+  - .claude/skills/compose-review
+  - .claude/skills/distill-pr-reviews
+  - .claude/skills/post-pr-review
+  - .claude/skills/resolve-pr-threads
+  - .claude/skills/run-local-review
+  - .claude/skills/run-pr-review
+  - .github/prompts/pr-review-style-reference.prompt.md
+  deployed_file_hashes:
+    .claude/commands/pr-review-style-reference.md: sha256:d1754e841f8b472ff60f5d977cd6313e79b25e9e29bd799f3558f2feeecc986f
+    .github/prompts/pr-review-style-reference.prompt.md: sha256:6f376063afe1a8e7f5750041c6b38c9e15ed1c2a3e743753972868e94894445d
+  content_hash: sha256:7f0b1de4fc49638dd5a251fe437eb21c1ccec58a077e80858053ce8319947a75
+  discovered_via: abeyuya-skills
+  marketplace_plugin_name: pr-review
